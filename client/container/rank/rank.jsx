@@ -16,6 +16,7 @@ export default class extends Component {
     return (
       <div className="page-wrap rank-page">
         排行榜
+        <span>我为什么这么帅</span>
       </div>
     )
   }

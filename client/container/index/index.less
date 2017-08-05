@@ -40,4 +40,38 @@
       margin-bottom: 20px;
     }
   }
+
+  .card-list-wrap {
+    margin-top: 20px;
+    .card-list {
+      .card-item {
+        display: flex;
+        background-color: #fff;
+        padding: 10px;
+        margin-bottom: 20px;
+        .img-wrap {
+          flex: none;
+          margin-right: 10px;
+          img {
+            width: 50px;
+            height: 50px;
+          }
+        }
+        .content-wrap {
+          flex: 1;
+          flex-direction: column;
+          .card-text {
+
+          }
+          .card-time {
+            text-align: right;
+          }
+        }
+      }
+    }
+    .card-status {
+      text-align: center;
+      color: #333;
+    }
+  }
 }
