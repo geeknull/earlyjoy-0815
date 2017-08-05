@@ -35,7 +35,6 @@ export default class extends Component {
       this.setState({
         userInfo: res
       });
-      debugger
     }).catch((err) => {
       console.log(err);
     });
@@ -43,10 +42,14 @@ export default class extends Component {
 
 
   render () {
+    let { userName, avatar } = this.state.userInfo;
 
     return (
         <div className="page-wrap main-page" ref="mainPage">
-
+          <div className="my-avatar">
+            <img src={avatar}/>
+          </div>
+          <p className="my-name">{userName}</p>
         </div>
     )
   }
