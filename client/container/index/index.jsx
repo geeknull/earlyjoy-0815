@@ -3,11 +3,11 @@ import { connect } from 'react-redux';
 import actions from '../../redux/actions/index.js';
 import { ajax } from '../../util/index.js';
 
-// @connect((state) => {
-//   return {
-//     cntData: state.cnt
-//   }
-// },{...actions})
+@connect((state) => {
+  return {
+    myInfo: state.myInfo
+  }
+},{...actions})
 export default class extends Component {
   constructor () {
     super();
@@ -35,6 +35,8 @@ export default class extends Component {
       this.setState({
         userInfo: res
       });
+      // 调用设置个人信息的action
+      this.props.setMyInfo(res);
     }).catch((err) => {
       console.log(err);
     });
@@ -42,7 +44,10 @@ export default class extends Component {
 
 
   render () {
-    let { userName, avatar } = this.state.userInfo;
+    // let { userName, avatar } = this.state.userInfo;
+    let { userName, avatar } = this.props.myInfo;
+
+    // console.log(this.props, 'asfds');
 
     return (
         <div className="page-wrap main-page" ref="mainPage">

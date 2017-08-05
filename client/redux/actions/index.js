@@ -9,6 +9,15 @@ export let setCnt = (cnt) => {
   }
 };
 
+// 设置我的个人信息
+export let setMyInfo = (myInfoObj) => {
+  return {
+    type: CONSTANTS.MY_INFO,
+    myInfoObj
+  }
+};
+
 export default {
-  setCnt
+  setCnt,
+  setMyInfo
 }
