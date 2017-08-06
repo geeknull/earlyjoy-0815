@@ -24,7 +24,7 @@ export default class extends Component {
       // 个人列表【默认值】赋默认值是必须的过程
       myList: {
         list: [],
-        hasMore: false,
+        hasMore: true, // 这个默认值要特殊设置一下
         offset: 0, // 如果要加载数据 我应该从第几条数据开始加载
         limit: 10, // 这次加载数据我打算加载多少条 一般这个值不变的
         loading: true, // 列表是否在加载
@@ -35,6 +35,57 @@ export default class extends Component {
   clickHandler () {
 
   }
+
+  // 获取我的个人列表 参数 返回值
+  getMyList = (offset, limit) => {
+    // 发送请求之前 设置loading
+    this.setState({
+      myList: {
+        ...this.state.myList,
+        ...{loading: true}
+      }
+    });
+
+    // 发送请求中
+    ajax({
+      url: 'http://localhost:8333/api/mylist',
+      method: 'post',
+      data: {
+        offset: this.state.myList.offset, // 自己去拿
+        limit: this.state.myList.limit, // 自己去拿
+      }
+    }).then((res) => {
+      // 发送请求后[成功]
+      let { hasMore, list } = res;
+
+      // 构造请求之后的列表
+      let newList = [
+        // 第一次的时候myList.list是数组
+        ...this.state.myList.list,
+        ...list
+      ];
+
+      // 请求成功后设置state
+      this.setState({
+        myList: {
+          ...this.state.myList,
+          list: newList, // BE
+          hasMore: res.hasMore, // BE
+          loading: false,
+          offset: newList.length,
+        }
+      });
+    }).catch((err) => {
+      // 发送请求后[失败]
+      // 告知用户
+      this.setState({
+        myList: {
+          ...this.state.myList,
+          loading: false
+        }
+      });
+    });
+  };
 
   componentDidMount () {
     // 请求我的信息
@@ -51,37 +102,12 @@ export default class extends Component {
       console.log(err);
     });
 
-    // 获取我的个人列表
-    ajax({
-      url: 'http://localhost:8333/api/mylist',
-      method: 'post',
-      data: {
-        offset: 0,
-        limit: 10,
-      }
-    }).then((res) => {
-      console.log(res);
-      let { hasMore, list } = res;
-      this.setState({
-        myList: {
-          ...this.state.myList,
-          list, res, loading: false,
-          offset: list.length,
-        }
-      });
-    }).catch((err) => {
-      this.setState({
-        myList: {
-          ...this.state.myList,
-          loading: false
-        }
-      });
-      console.log(err);
-    });
+    // 第一次获取个人信息列表
+    this.getMyList();
 
-    // hasMore flag 标识
-    // ajax 方法公用
-    // 发送请求的时候不允许在请求数据 loading 状态不能再发送数据
+    // [ok] hasMore flag 标识 当我们已经加载完成的时候 即使滚动到底部了 也不去加载
+    // [ok] ajax 方法公用
+    // [ok]发送请求的时候不允许在请求数据 loading 状态不能再发送数据 在正在加载中的状态的时候不能再去请求数据了
     // 组件卸载的时候 记得 removeEventListener scroll
     // 没有数据了给用户一个提示
     // offsetHeight 会引发重绘重排相关的事情，通过节流结局
@@ -90,45 +116,33 @@ export default class extends Component {
     // 列表的空状态 怎么告诉告诉
     // 返回顶部
     // 图片的延迟加载
-    this.refs.mainPage.addEventListener('scroll', (e) => {
-      let scrollHeight = this.refs.mainPage.scrollHeight;
-      let offsetHeight = this.refs.mainPage.offsetHeight;
-      let scrollTop = this.refs.mainPage.scrollTop;
+    this.refs.mainPage.addEventListener('scroll', this.mainPageScrollHandler, false)
+  }
 
-      if ( scrollHeight === offsetHeight+scrollTop ) {
-        // 滚动到底部再去发送请求
-        let {offset,limit} = this.state.myList;
-        ajax({
-          url: 'http://localhost:8333/api/mylist',
-          method: 'post',
-          data: {
-            offset: offset,
-            limit: limit,
-          }
-        }).then((res) => {
-          let { hasMore, list } = res;
-          // 新的列表数据 = 当前的列表数据 + 这次返回的列表数据
-          let newList = [...this.state.myList.list, ...list];
-          this.setState({
-            myList: {
-              ...this.state.myList,
-              hasMore,
-              list: newList,
-              loading: false,
-              offset: newList.length
-            }
-          });
-        }).catch((err) => {
-          this.setState({
-            myList: {
-              ...this.state.myList,
-              loading: false
-            }
-          });
-          console.log(err);
-        });
-      }
-    }, false)
+  // 绑定到mainPage上的滚动监听回调函数
+  mainPageScrollHandler = (e) => {
+    let scrollHeight = this.refs.mainPage.scrollHeight;
+    let offsetHeight = this.refs.mainPage.offsetHeight;
+    let scrollTop = this.refs.mainPage.scrollTop;
+
+    // 如果是loading状态不让再去请求
+    if (this.state.myList.loading ||
+      this.state.myList.hasMore === false
+    ) {
+      return void 0;
+    }
+
+    if ( scrollHeight === offsetHeight+scrollTop ) {
+      this.getMyList(); // 发送请求 该函数内 会自动去state获取offset和limit 不用手动传
+    }
+  };
+
+
+  // 组件卸载的时候要做的事情
+  componentWillUnmount ()  {
+    // 万一把scroll绑定到了document上呢 思考下是不是必须要卸载
+    // 绑定到mainPage当前情况下是不需要卸载的 也可以
+    this.refs.mainPage.removeEventListener('scroll', this.mainPageScrollHandler)
   }
 
 
@@ -167,6 +181,7 @@ export default class extends Component {
             }
           </div>
           {loading ? <p className="card-status">正在加载中</p> : null}
+          {hasMore === false ? <p className="card-status">没有数据数据啦🤡🤡🤡</p> : null}
         </div>
       </div>
     )
